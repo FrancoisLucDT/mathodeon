@@ -50,7 +50,7 @@ MuseScore {
         {
             if("0123456789.".includes(currentCharacter))
             {
-                // Numbers
+                // Tokenizing Numbers
 
                 let numberToken = "" + currentCharacter;
                 let decimalFlag = false;
@@ -86,13 +86,14 @@ MuseScore {
                 tokens.push(token);
 
                 // index is currently on the next character we want to
-                // examine; the for loop will increment it. Therefore,
-                // it must be brought back by one
+                // examine due to incrementCurrentCharacter() pushing it
+                // beyond numbers; the for loop will increment it even
+                // further. Therefore, it must be brought back by one
                 index--;
             }
             else if("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(currentCharacter))
             {
-                // Functions & Variables
+                // Tokenizing Functions & Variables
 
                 let stringToken = "" + currentCharacter;
 
@@ -107,24 +108,36 @@ MuseScore {
 
                 stringToken = stringToken.toLowerCase();
 
-                if(stringToken === "sqrt" ||
-                stringToken === "log" ||
-                stringToken === "ln" ||
-                stringToken === "sin":
-                case "cos":
-                case "tan":
-                case "sinh":
-                case "cosh":
-                case "tanh":
-                case "asin":
-                case "acos":
-                case "atan":
-                case "abs":
-                case "ceil":
-                case "floor":
-                case "sum":
-                case "mult":
-                default:
+                if(stringToken === "sqrt" || stringToken === "log" ||
+                    stringToken === "ln" || stringToken === "sin" ||
+                    stringToken === "cos" || stringToken === "tan" ||
+                    stringToken === "sinh" || stringToken === "cosh" ||
+                    stringToken === "tanh" || stringToken === "asin" ||
+                    stringToken === "acos" || stringToken === "atan" ||
+                    stringToken === "abs" || stringToken === "ceil" ||
+                    stringToken === "floor" || stringToken === "sum" ||
+                    stringToken === "mult")
+                {
+                    const token = {element: stringToken, level: 6};
+                    tokens.push(token);
+                }
+                else
+                {
+                    while("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(currentCharacter))
+                    {
+                        stringToken += currentCharacter;
+
+                        incrementCurrentCharacter();
+                    }
+
+                    const token = {element: stringToken, level: 0};
+                    tokens.push(token);
+
+                    // index is currently on the next character we want to
+                    // examine due to incrementCurrentCharacter() pushing it
+                    // beyond numbers or letters; the for loop will increment
+                    // it even further. Therefore, it must be brought back by one
+                    index--;
                 }
             }
 
