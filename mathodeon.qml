@@ -48,14 +48,12 @@ MuseScore {
 
         for(index; index < formula.length(); index++)
         {
-            if("0123456789.".includes(currentCharacter))
+            if("0123456789.".includes(currentCharacter)) // Tokenizing Numbers
             {
-                // Tokenizing Numbers
-
                 let numberToken = "" + currentCharacter;
                 let decimalFlag = false;
 
-                if(currentCharacter == '.')
+                if(currentCharacter === '.')
                 {
                     decimalFlag = true;
                 }
@@ -66,11 +64,11 @@ MuseScore {
                 {
                     numberToken += currentCharacter;
 
-                    if(currentCharacter == '.')
+                    if(currentCharacter === '.')
                     {
                         if(decimalFlag == true)
                         {
-                            errorField.text = qsTr(`Extra period at position ${index+1}`);
+                            errorField.text = qsTr(`Extra period at position ${index}`);
                             return;
                         } else
                         {
@@ -140,12 +138,70 @@ MuseScore {
                     index--;
                 }
             }
+            else
+            {
+                switch(currentCharacter)
+                {
+                case '!':
+                    if (formula.charAt(index+1) === '=')
+                    {
+                        const token = {element: "!=", level: 1}
+                        tokens.push(token);
 
-            // Operators
+                        index++;
+                    } else {
+                        const token = {element: "!", level: 6}
+                        tokens.push(token);
+                    };
+                    break;
+                case '=':
+                    const token = {element: "=", level: 1}
+                    tokens.push(token);
+                    break;
+                case '>':
+                case '<':
+                    if (formula.charAt(index+1) === '=')
+                    {
+                        const token = {element: currentCharacter + "=", level: 1}
+                        tokens.push(token);
 
-            // Punctuation
-
-            // Whitespace
+                        index++;
+                    } else {
+                        const token = {element: "" + currentCharacter, level: 1}
+                        tokens.push(token);
+                    };
+                    break;
+                case '+':
+                case '-':
+                    const additionToken = {element: "" + currentCharacter, level: 2}
+                    tokens.push(token);
+                    break;
+                case '*':
+                case '/':
+                case '%':
+                    const multiplicationToken = {element: "" + currentCharacter, level: 3}
+                    tokens.push(token);
+                    break;
+                case '^':
+                    const exponentToken = {element: "" + currentCharacter, level: 4}
+                    tokens.push(token);
+                    break;
+                case '(':
+                    const openParentheseToken = {element: "" + currentCharacter, level: 7}
+                    tokens.push(token);
+                    break;
+                case ')':
+                    const closeParentheseToken = {element: "" + currentCharacter, level: 8}
+                    tokens.push(token);
+                    break;
+                case ',':
+                    const commaToken = {element: "" + currentCharacter, level: 9}
+                    tokens.push(token);
+                    break;
+                case ' ':
+                default: errorField.text = qsTr("disallowed "+currentCharacter + "; it cannot be understood.");
+                }
+            }
 
         }
 
@@ -162,7 +218,7 @@ MuseScore {
         id: keyField
         placeholderText: qsTr("Formula to determine key")
 
-        onTextEdited:
+
     }
 
     TextField {
@@ -189,6 +245,6 @@ MuseScore {
         id: runButton
         text: qsTr("Submit")
 
-        onClicked:
+
     }
 }
