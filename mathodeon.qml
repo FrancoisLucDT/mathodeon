@@ -27,13 +27,13 @@ MuseScore {
 
     /*
              * Formula grammar in Backus-Naur Form,
-             * (using regular expression notation in expressions to shorten
-             *  the text)
+             * using regular expression notation in expressions to shorten
+             * the text
              *
              * <S> ::= <P> (<B> <P>)*
              * <P> ::= <V> | "(" <S> ")" | "-" <P> | <F> "(" <S> ")" |
              * 		   <T> "(" <E><A>* "," <S> "," <S> ")"
-             * <B> ::= "=" | "!=" | ">" | "<" | "+" | "-" | "*" | "/" | "^"
+             * <B> ::= "+" | "-" | "*" | "/" | "^"
              * <F> ::= "log" | "ln" | "sin" | "cos" | "tan" | "sinh" | "cosh" |
              * "tanh" | "asin" | "acos" | "atan" | "sqrt"| "ceil" | "floor" |
              * "abs"
@@ -51,7 +51,7 @@ MuseScore {
             {
                 return;
             } else {
-                if(expectedToken.level === 9)
+                if(expectedToken.level === 8)
                 {
                     errorField.text = "Open parenthese is not closed";
                 } else {
@@ -68,7 +68,7 @@ MuseScore {
             let next = index < tokens.length - 1 ? tokens[index++]: tokens[index];
 
             while(index < tokens.length - 1 &&
-                  (next.level > 1 && next.level < 6))
+                  (next.level > 1 && next.level < 5))
             {
                 p(tokens, index, errorField);
                 next = index < tokens.length - 1 ? tokens[index++]: tokens[index];
@@ -79,9 +79,9 @@ MuseScore {
 
         function p(tokens, index, errorField) {
 
-            const openParentheseToken = {element: "(", level:8};
+            const openParentheseToken = {element: "(", level:7};
             const commaToken = {element: ",", level:10};
-            const closeParentheseToken = {element: ")", level:9};
+            const closeParentheseToken = {element: ")", level:8};
 
 
             let next;
@@ -122,9 +122,9 @@ MuseScore {
                 expect(next, closeParentheseToken);
             } else if(next.element === "-")
             {
-                tokens[index-1] = {element: "--", level: 6};
+                tokens[index-1] = {element: "--", level: 5};
                 p(tokens, index, errorField);
-            } else if (next.level === 7)
+            } else if (next.level === 6)
             {
                 iterate("Unexpected end of formula");
                 expect(next, openParentheseToken);
@@ -138,7 +138,7 @@ MuseScore {
 
         let token = s(tokens, 0, errorField);
 
-        if(token.level !== 11)
+        if(token.level !== 10)
         {
             errorField.text = "Unexpected symbol: " + token.element;
         }
@@ -148,7 +148,48 @@ MuseScore {
 
     function makePostFix(tokens) {
 
-        return tokens;
+        let result = Array();
+        let operatorStack = Array();
+
+        for(let e in tokens)
+        {
+            if(e.level === 0 || e.level === 1)
+            {
+                result.push(e);
+
+            } else if (operatorStack.length === 0)
+            {
+                operatorStack.push(e);
+
+            } else if (e.element === ")")
+            {
+                while (operatorStack.length !== 0 &&
+                       operatorStack.at(operatorStack.length-1).element !== "(")
+                {
+                    result.push(operatorStack.pop());
+                }
+                operatorStack.pop();
+            } else if (operatorStack.at(operatorStack.length-1).level < e.level)
+            {
+                operatorStack.push(e);
+            } else
+            {
+                while (operatorStack.length !== 0 &&
+                       operatorStack.at(operatorStack.length-1).level >= e.level &&
+                       operatorStack.at(operatorStack.length-1).level < 7)
+                {
+                    result.push(operatorStack.pop());
+                }
+                operatorStack.push(e);
+            }
+        }
+
+        while (operatorStack !== 0)
+        {
+            result.push(operatorStack.pop());
+        }
+
+        return result;
     }
 
     function buildOperationsTree(tokens, parameter) {
@@ -183,7 +224,7 @@ MuseScore {
          * Functions: "sqrt", "log", "ln", "sin", "cos", "tan", "sinh", "cosh", "tanh",
                       "asin", "acos", "atan", "abs", "ceil", "floor", "sum", "mult"
          * Variables: [A-Za-z]*[A-Za-z0-9]*
-         * Operators: "!", "!=", "=", ">", ">=", "<", "<=", "+", "-", "*", "/", "%", "^"
+         * Operators: "!", "+", "-", "*", "/", "%", "^"
          * Punctuation: "(", ")", ","
         */
 
@@ -269,7 +310,7 @@ MuseScore {
                     stringToken === "floor" || stringToken === "sum" ||
                     stringToken === "mult")
                 {
-                    const token = {element: stringToken, level: 7};
+                    const token = {element: stringToken, level: 6};
                     tokens.push(token);
                 }
                 else
@@ -296,59 +337,34 @@ MuseScore {
                 switch(currentCharacter)
                 {
                 case '!':
-                    if (formula.charAt(index+1) === '=')
-                    {
-                        const token = {element: "!=", level: 2}
-                        tokens.push(token);
-
-                        index++;
-                    } else {
-                        const token = {element: "!", level: 7}
-                        tokens.push(token);
-                    };
-                    break;
-                case '=':
-                    const token = {element: "=", level: 2}
+                    const token = {element: "!", level: 6}
                     tokens.push(token);
-                    break;
-                case '>':
-                case '<':
-                    if (formula.charAt(index+1) === '=')
-                    {
-                        const token = {element: currentCharacter + "=", level: 2}
-                        tokens.push(token);
-
-                        index++;
-                    } else {
-                        const token = {element: "" + currentCharacter, level: 2}
-                        tokens.push(token);
-                    };
                     break;
                 case '+':
                 case '-':
-                    const additionToken = {element: "" + currentCharacter, level: 3}
+                    const additionToken = {element: "" + currentCharacter, level: 2}
                     tokens.push(token);
                     break;
                 case '*':
                 case '/':
                 case '%':
-                    const multiplicationToken = {element: "" + currentCharacter, level: 4}
+                    const multiplicationToken = {element: "" + currentCharacter, level: 3}
                     tokens.push(token);
                     break;
                 case '^':
-                    const exponentToken = {element: "^", level: 5}
+                    const exponentToken = {element: "^", level: 4}
                     tokens.push(token);
                     break;
                 case '(':
-                    const openParentheseToken = {element: "(", level: 8}
+                    const openParentheseToken = {element: "(", level: 7}
                     tokens.push(token);
                     break;
                 case ')':
-                    const closeParentheseToken = {element: ")", level: 9}
+                    const closeParentheseToken = {element: ")", level: 8}
                     tokens.push(token);
                     break;
                 case ',':
-                    const commaToken = {element: ",", level: 10}
+                    const commaToken = {element: ",", level: 9}
                     tokens.push(token);
                     break;
                 case ' ':
@@ -359,12 +375,16 @@ MuseScore {
 
         }
 
-        const lineToken = {element: "EOL", level: 11}
+        const lineToken = {element: "EOL", level: 10}
         tokens.push(token);
 
         return tokens;
     }
 
+    TextField {
+        id: errorField
+        readOnly: true
+    }
 
     ComboBox {
         id: noteChooserBox
@@ -375,7 +395,7 @@ MuseScore {
         id: keyField
         placeholderText: qsTr("Formula to determine key")
 
-
+        onEditingFinished: tokenize(this.text, errorField)
     }
 
     TextField {
